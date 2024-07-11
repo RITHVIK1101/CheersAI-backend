@@ -46,6 +46,13 @@ def get_vapi_context():
         "messages": formatted_history
     })
 
+async def get_last_conversation(user_id: str, limit: int = 5):
+    # Retrieve the last conversation for the user
+    history = (
+        messages_collection.find({"user_id": user_id}).sort([("_id", -1)]).limit(limit)
+    )
+    return list(history)
+
 
 def handle_vapi_report():
     data = request.json

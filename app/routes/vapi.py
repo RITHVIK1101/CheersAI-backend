@@ -17,7 +17,7 @@ class VapiReport(BaseModel):
 
 
 
-@app.route('/chat/vapi/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def handle_vapi_requests():
     if request.method == 'GET':
         return get_vapi_context()

@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, HTTPException
+from flask import Flask, request, jsonify
 from datetime import datetime
 from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request
 from app.database import messages_collection
 from bson import ObjectId
 
-app = Flask(__name__)
+router = APIRouter()
 
 class VapiReport(BaseModel):
     user_id: str
@@ -17,15 +18,15 @@ class VapiReport(BaseModel):
 
 
 
-@app.route('/', methods=['GET', 'POST'])
-def handle_vapi_requests():
+@router.api_route('/', methods=['GET', 'POST'])
+async def handle_vapi_requests(request: Request):
     if request.method == 'GET':
-        return get_vapi_context()
+        return await get_vapi_context(request)
     elif request.method == 'POST':
-        return handle_vapi_report()
+        return await handle_vapi_report(request)
 
 
-def get_vapi_context():
+def get_vapi_context(request: Request):
     user_id = request.args.get('userId')
     if not user_id:
         return jsonify({"error": "User ID not provided"}), 400
@@ -54,7 +55,7 @@ async def get_last_conversation(user_id: str, limit: int = 5):
     return list(history)
 
 
-def handle_vapi_report():
+def handle_vapi_report(request: Request):
     data = request.json
     
     if data['message']['type'] == 'end-of-call-report':
@@ -93,5 +94,3 @@ def handle_vapi_report():
     else:
         return jsonify({'message': 'Received non-end-of-call report message'}), 200
 
-if __name__ == '__main__':
-    app.run(debug=True)

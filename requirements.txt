@@ -1,8 +1,7 @@
 openai
-firebase
+firebase_admin
 uvicorn
 fastapi
 pymongo
 pydantic
-bson
 flask

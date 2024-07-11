@@ -1,0 +1,8 @@
+openai
+firebase
+uvicorn
+fastapi
+pymongo
+pydantic
+bson
+flask

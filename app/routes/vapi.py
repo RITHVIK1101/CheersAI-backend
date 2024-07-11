@@ -15,7 +15,38 @@ class VapiReport(BaseModel):
     recording_url: str
     full_report: dict
 
-@app.route('/chat/vapi/', methods=['POST'])
+
+
+@app.route('/chat/vapi/', methods=['GET', 'POST'])
+def handle_vapi_requests():
+    if request.method == 'GET':
+        return get_vapi_context()
+    elif request.method == 'POST':
+        return handle_vapi_report()
+
+
+def get_vapi_context():
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({"error": "User ID not provided"}), 400
+
+    # Get the last conversation for the user
+    history = get_last_conversation(user_id)
+
+    # Format the conversation history as Vapi expects
+    formatted_history = [
+        {
+            "role": "user" if msg["role"] == "user" else "assistant",
+            "content": msg["content"]
+        }
+        for msg in history
+    ]
+
+    return jsonify({
+        "messages": formatted_history
+    })
+
+
 def handle_vapi_report():
     data = request.json
     

@@ -1,9 +1,9 @@
+from flask import Flask, request, jsonify
 from datetime import datetime
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import JSONResponse as jsonify
 from app.database import messages_collection
-import pytz
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -16,6 +16,8 @@ class VapiReport(BaseModel):
     recording_url: str
     full_report: dict
 
+
+
 @router.api_route('/', methods=['GET', 'POST'])
 async def handle_vapi_requests(request: Request):
     if request.method == 'GET':
@@ -23,39 +25,38 @@ async def handle_vapi_requests(request: Request):
     elif request.method == 'POST':
         return await handle_vapi_report(request)
 
-async def get_vapi_context(request: Request):
-    data = await request.json()
 
-    user_id = data.get('metadata', {}).get('userId')
+def get_vapi_context(request: Request):
+    user_id = request.args.get('userId')
     if not user_id:
-        return jsonify({"error": "User ID not provided"}, status_code=400),
+        return jsonify({"error": "User ID not provided"}), 400
 
-    # Fetch context based on user ID
-    context = await get_last_user_messages(user_id)
+    # Get the last conversation for the user
+    history = get_last_conversation(user_id)
+
+    # Format the conversation history as Vapi expects
+    formatted_history = [
+        {
+            "role": "user" if msg["role"] == "user" else "assistant",
+            "content": msg["content"]
+        }
+        for msg in history
+    ]
 
     return jsonify({
-        "assistant": {
-            "model": {
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": context
-                    }
-                ]
-            }
-        }
+        "messages": formatted_history
     })
 
-async def get_last_user_messages(user_id: str, limit: int = 5):
-    # Retrieve the last conversation messages for the user
+async def get_last_conversation(user_id: str, limit: int = 5):
+    # Retrieve the last conversation for the user
     history = (
         messages_collection.find({"user_id": user_id}).sort([("_id", -1)]).limit(limit)
     )
-    # Convert ObjectId to string and datetime to ISO format for JSON serialization
-    return [{**msg, "_id": str(msg["_id"]), "timestamp": msg.get("timestamp", "").isoformat() if "timestamp" in msg else None} for msg in history]
+    return list(history)
 
-async def handle_vapi_report(request: Request):
-    data = await request.json()
+
+def handle_vapi_report(request: Request):
+    data = request.json
     
     if data['message']['type'] == 'end-of-call-report':
         call_data = data['message']['call']
@@ -67,7 +68,7 @@ async def handle_vapi_report(request: Request):
             raise HTTPException(status_code=400, detail="User ID not found in call metadata")
         
         # Search for the user_id in MongoDB
-        user = messages_collection.find({"user_id": user_id}).sort([("_id", -1)]).limit(50)
+        user = messages_collection.find_one({"_id": ObjectId(user_id)})
         
         if not user:
             raise HTTPException(status_code=404, detail="User ID not found in the database")
@@ -76,7 +77,7 @@ async def handle_vapi_report(request: Request):
         report = {
             'user_id': user_id,
             'call_id': call_data['id'],
-            'timestamp': datetime.now(pytz.utc),
+            'timestamp': datetime.now(datetime.timezone.utc),
             'summary': data['message'].get('summary'),
             'transcript': data['message'].get('transcript'),
             'recording_url': data['message'].get('recordingUrl'),
@@ -92,3 +93,4 @@ async def handle_vapi_report(request: Request):
         }), 201
     else:
         return jsonify({'message': 'Received non-end-of-call report message'}), 200
+

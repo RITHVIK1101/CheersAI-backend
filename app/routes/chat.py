@@ -80,7 +80,7 @@ async def chat(
                 # Debugging: print the response
         print("OpenAI API response:", response)
 
-        reply = response.choices[0].message['content']
+        reply = response.choices[0].message.content
 
         # Store the new conversation
         message_doc = {

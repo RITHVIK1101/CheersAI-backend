@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import auth, credentials
 import base64
+import traceback
 
 
 load_dotenv()
@@ -55,8 +56,13 @@ async def chat(
         context = [{"role": "system", "content": chatgpt_prompt}]
 
         for conversation in reversed(conversation_history):
-            context.append({"role": "user", "content": conversation["message"]})
-            context.append({"role": "assistant", "content": conversation["response"]})
+            if "message" in conversation:
+                context.append({"role": "user", "content": conversation["message"]})
+            if "response" in conversation:
+                context.append({"role": "assistant", "content": conversation["response"]})
+            if "summary" in conversation:
+                context.append({"role": "assistant", "content": conversation["summary"]})
+
 
         context.append({"role": "user", "content":message})
 
@@ -94,4 +100,5 @@ async def chat(
 
     except Exception as e:
         print(f"Error: {str(e)}")
+        # traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

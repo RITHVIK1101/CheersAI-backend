@@ -77,7 +77,10 @@ async def chat(
             temperature=0.7,
             max_tokens=500,
         )
-        reply = response.choices[0].message.content
+                # Debugging: print the response
+        print("OpenAI API response:", response)
+
+        reply = response.choices[0].message['content']
 
         # Store the new conversation
         message_doc = {

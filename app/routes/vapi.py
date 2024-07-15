@@ -66,8 +66,8 @@ async def handle_vapi_report(request: Request):
         print("Handling end-of-call report")
         call_data = data['message']['call']
         
-        # Extract user_id from metadata
-        user_id = call_data.get('metadata', {}).get('userId')
+        # Extract user_id from assistantOverrides.metadata
+        user_id = call_data.get('assistantOverrides', {}).get('metadata', {}).get('userId')
 
         # Debug print to check the extracted user_id
         print("Extracted user_id:", user_id)

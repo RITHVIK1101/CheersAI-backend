@@ -68,6 +68,9 @@ async def handle_vapi_report(request: Request):
         
         # Extract user_id from metadata
         user_id = call_data.get('metadata', {}).get('userId')
+
+        # Debug print to check the extracted user_id
+        print("Extracted user_id:", user_id)
         
         if not user_id:
             raise HTTPException(status_code=400, detail="User ID not found in call metadata")

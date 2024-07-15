@@ -26,15 +26,23 @@ async def handle_vapi_requests(request: Request):
         return await handle_vapi_report(request)
 
 async def get_vapi_context(request: Request):
-    print("Handling GET request")
-    data = await request.json()
+    print("Handling GET request", json.dumps(await request.json()))
+    try:
+        data = await request.json()
+    except Exception as e:
+        print("Error parsing JSON:", str(e))
+        return jsonify({"error": "Invalid JSON format"}, status_code=400),
 
-    user_id = data.get('metadata', {}).get('userId')
+    user_id = data.get('message', {}).get('call', {}).get('assistantOverrides', {}).get('metadata', {}).get('userId')
     if not user_id:
         return jsonify({"error": "User ID not provided"}, status_code=400),
 
-    # Fetch context based on user ID
-    context = await get_last_user_messages(user_id)
+    try:
+        # Fetch context based on user ID
+        context = await get_last_user_messages(user_id)
+    except Exception as e:
+        print("Error fetching user messages:", str(e))
+        return jsonify({"error": "Failed to fetch user messages"}, status_code=500),
 
     return jsonify({
         "assistant": {

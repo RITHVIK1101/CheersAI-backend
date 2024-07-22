@@ -43,7 +43,7 @@ async def get_current_user(authorization: str = Header()):
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-@router.post("/")
+@router.post("/home")
 async def chat(
     user_id: str = Form(...),
     message: str = Form(...),

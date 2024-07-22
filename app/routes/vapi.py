@@ -17,7 +17,7 @@ class VapiReport(BaseModel):
     recording_url: str
     full_report: dict
 
-@router.api_route('/', methods=['GET', 'POST'])
+@router.api_route('/home', methods=['GET', 'POST'])
 async def handle_vapi_requests(request: Request):
     print("Received request", request.method, request.url, json.dumps(await request.json()))
     if request.method == 'GET':
